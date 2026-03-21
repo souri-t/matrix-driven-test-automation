@@ -1,6 +1,6 @@
-# C# クラスライブラリ + MSTest + テストマトリクス生成ツール
+# C# クラスライブラリ + MSTest + テストマトリクス駆動開発
 
-このリポジトリは、`PurchaseService` を題材に以下フローを実現するサンプルです（レポート工程は除外）。
+このリポジトリは `PurchaseService` を題材に、以下フローを実現するサンプルです（レポート工程は除外）。
 
 - Excelでテストマトリクスをレビュー
 - JSON中間ファイルに変換して管理
@@ -14,53 +14,32 @@
 - ライブラリ: `src/PurchaseLibrary/Class1.cs`
 - テスト: `src/PurchaseLibrary.Tests/`
 
-## ツールスクリプト
+## Agent Skill
 
-- `scripts/create_sample_excel.py` サンプルExcel作成
-- `scripts/excel_to_json.py` Excel -> JSON
-- `scripts/validate_matrix_json.py` JSON検証
-- `scripts/generate_gherkin.py` JSON -> Gherkin
-- `scripts/build_ai_request.py` AI依頼文生成（MSTest向け）
-- `scripts/materialize_ai_tests.py` AI応答 -> `.cs` テストファイル
-- `scripts/json_to_excel.py` JSON -> Excel 逆変換
+このリポジトリでは、ツール処理は GitHub Copilot Agent Skill として管理します。
 
-## セットアップ
+- Skill定義: `.github/skills/matrix-driven-test-automation/SKILL.md`
+- 実装リソース: `.github/skills/matrix-driven-test-automation/`
 
-```bash
-python3 -m pip install -r requirements.txt
-```
+方針:
 
-## 一連実行
+- 通常運用ではスクリプトを直接実行しない
+- Copilot Agent に依頼して Skill を呼び出す
 
-```bash
-make demo
-```
+## 依頼例（Copilot Agent向け）
 
-`make demo` の実行内容:
+- 「テストケースExcelをJSONに変換して、バリデーションまで実行して」
+- 「現在のJSONからGherkinを再生成して」
+- 「このJSONを使ってMSTest生成用のAI依頼ファイルを作って」
+- 「AI回答MarkdownからMSTestコードを取り込んで、`dotnet test` を実行して」
 
-1. サンプルExcel生成
-2. Excel -> JSON
-3. JSONバリデーション
-4. Gherkin生成
-5. AI依頼ファイル生成
-6. AI応答MarkdownからMSTestコード抽出
-7. `dotnet test`
+## 生成物の配置
 
-## 実AIを使う場合
-
-1. `make ai-request` を実行
-2. `artifacts/ai_test_request.md` をAIへ渡す
-3. AI回答を `artifacts/<name>.md` として保存
-4. 次を実行
-
-```bash
-python3 scripts/materialize_ai_tests.py \
-  --input artifacts/<name>.md \
-  --output src/PurchaseLibrary.Tests/Generated/PurchaseServiceMatrixAiTests.cs
-
-dotnet test MatrixDrivenSample.sln
-```
+- テストケース: `testcases/`
+- Gherkin: `features/`
+- AI入出力: `artifacts/`
+- 生成テストコード: `src/PurchaseLibrary.Tests/Generated/`
 
 ## 補足
 
-- 以前のPythonサンプル一式は `legacy_python_sample/` に退避しています。
+- `dotnet test MatrixDrivenSample.sln` は通常どおり実行可能です。
