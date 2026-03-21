@@ -1,37 +1,60 @@
-# C# クラスライブラリ + MSTest + テストマトリクス駆動開発
+# テストマトリクス駆動開発フロー設計
 
-このリポジトリは `PurchaseService` を題材に、以下フローを実現するサンプルです（レポート工程は除外）。
+## 概要
 
-- Excelでテストマトリクスをレビュー
-- JSON中間ファイルに変換して管理
-- Gherkinを自動生成
-- AIへMSTest生成依頼を作成
-- AI応答からMSTestコードを取り込み
-- `dotnet test` で実行
+本ドキュメントは、以下の開発フローを実現するための仕組み設計をまとめたものである。
 
-## C#本体
+```
+[ Excel（マトリクス編集・レビュー） ]
+            ↓（エクスポート）
+[ JSON（中間データ・Git管理） ]
+            ↓（生成）
+[ Gherkin（Scenario Outline） ]
+            ↓
+[ テストコード / 実行 ]
+            ↓
+[ レポート ]
+```
 
-- ライブラリ: `src/PurchaseLibrary/Class1.cs`
-- テスト: `src/PurchaseLibrary.Tests/`
+---
 
-## Agent Skill
+## 全体方針
 
-このリポジトリでは、ツール処理は GitHub Copilot Agent Skill として管理します。
+### 基本原則
 
-- Skill定義: `.github/skills/matrix-driven-test-automation/SKILL.md`
-- 実装リソース: `.github/skills/matrix-driven-test-automation/`
+* Excelは「ビュー専用」とする（Git管理しない）
+* JSONを唯一の真実（Single Source of Truth）とする
+* Gherkinは生成物とする（手書き禁止）
+* テストコードもGherkinに従属させる
 
-方針:
+### 想定
 
-- 通常運用ではスクリプトを直接実行しない
-- Copilot Agent に依頼して Skill を呼び出す
+* テストパターンはExcelで人間が作る場合もあるが、AIがJSONを直接生成するケースも想定する。
+* Excelはあくまで人間のためのUIであり、JSONが機械処理のためのデータフォーマットである。
+* AIが作成したテストパターンのJSONからExcelへの逆変換は行えるようにする。
 
-## 依頼例（Copilot Agent向け）
+---
 
-- 「テストケースExcelをJSONに変換して、バリデーションまで実行して」
-- 「現在のJSONからGherkinを再生成して」
-- 「このJSONを使ってMSTest生成用のAI依頼ファイルを作って」
-- 「AI回答MarkdownからMSTestコードを取り込んで、`dotnet test` を実行して」
+## 必要な全工程
+
+1. テストケースExcelをJSONに変換する
+2. Gherkin生成する
+3. AI依頼ファイルを生成する
+4. テストコードへ反映する
+
+## 各工程の依頼例（Copilot Agent向け）
+
+1. テストケースExcelをJSONに変換する
+「テストケースExcelをJSONに変換して」
+
+2. Gherkin生成する
+「現在のJSONからGherkinを生成して」
+
+3. AI依頼ファイルを生成する
+「このJSONを使ってMSTest生成用のAI依頼ファイルを作って」
+
+4. テストコードへ反映する
+「AI回答MarkdownからMSTestコードを取り込み、テストプロジェクトへ反映して」
 
 ## 生成物の配置
 
@@ -42,4 +65,7 @@
 
 ## 補足
 
-- `dotnet test MatrixDrivenSample.sln` は通常どおり実行可能です。
+- マトリクスは `ID` と `expected` を必須列とし、それ以外の列はテストケースごとに可変です。
+- JSONバリデーションは `excel_to_json` 実行時に自動で行われます（必須列、ID重複チェック）。
+- 既存JSONのみを再確認したい場合は、`validate_matrix_json` を補助的に利用できます。
+- 最終確認は `dotnet test src/MatrixDrivenSample.sln` で実行可能です。

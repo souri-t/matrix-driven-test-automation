@@ -6,13 +6,6 @@ from pathlib import Path
 
 from matrix_schema import REQUIRED_COLUMNS
 
-ALLOWED = {
-    "user_type": {"normal", "premium", "blacklisted"},
-    "payment": {"credit", "cash"},
-    "product": {"normal", "restricted"},
-    "expected": {"success", "failed", "forbidden", "blocked"},
-}
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate matrix JSON for PurchaseService.")
@@ -40,11 +33,6 @@ def main() -> None:
             if rid in ids:
                 errors.append(f"Row#{idx}: duplicated id '{rid}'")
             ids.add(rid)
-
-        for col, choices in ALLOWED.items():
-            value = row.get(col)
-            if value and value not in choices:
-                errors.append(f"Row#{idx}: invalid {col}='{value}'")
 
     if errors:
         print("Validation failed:")

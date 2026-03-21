@@ -4,8 +4,28 @@ import argparse
 import json
 from pathlib import Path
 
+from matrix_schema import REQUIRED_COLUMNS
 
-HEADERS = ["id", "user_type", "payment", "product", "expected"]
+
+def collect_headers(rows: list[dict[str, object]]) -> list[str]:
+    headers: list[str] = []
+    for row in rows:
+        for key in row.keys():
+            if key not in headers:
+                headers.append(key)
+
+    for key in REQUIRED_COLUMNS:
+        if key not in headers:
+            headers.append(key)
+
+    if "id" in headers:
+        headers.remove("id")
+        headers.insert(0, "id")
+    if "expected" in headers:
+        headers.remove("expected")
+        headers.append("expected")
+
+    return headers
 
 
 def main() -> None:
@@ -17,23 +37,32 @@ def main() -> None:
     rows = json.loads(Path(args.input).read_text(encoding="utf-8"))
     if not rows:
         raise ValueError("No test cases found")
+    if any(not isinstance(row, dict) for row in rows):
+        raise ValueError("Each JSON row must be an object")
+
+    headers = collect_headers(rows)
+    input_headers = [h for h in headers if h not in ("id", "expected")]
+
+    steps = ['    When テスト対象を実行する']
+    if input_headers:
+        first = input_headers[0]
+        steps = [f'    Given 入力 "{first}" が "<{first}>"']
+        steps.extend([f'    And 入力 "{h}" が "<{h}>"' for h in input_headers[1:]])
+        steps.append("    When テスト対象を実行する")
 
     lines = [
-        "Feature: 商品購入",
+        "Feature: Matrix Driven Test",
         "",
-        "  Scenario Outline: 商品購入 <id>",
-        "    Given ユーザー種別が \"<user_type>\"",
-        "    And 支払い方法が \"<payment>\"",
-        "    And 商品種別が \"<product>\"",
-        "    When 商品を購入する",
-        "    Then 結果が \"<expected>\" である",
+        "  Scenario Outline: ケース <id>",
+        *steps,
+        '    Then 期待値が "<expected>" である',
         "",
         "    Examples:",
-        "      | " + " | ".join(HEADERS) + " |",
+        "      | " + " | ".join(headers) + " |",
     ]
 
     for row in rows:
-        values = [str(row.get(k, "")).replace("|", "\\|") for k in HEADERS]
+        values = [str(row.get(k, "")).replace("|", "\\|") for k in headers]
         lines.append("      | " + " | ".join(values) + " |")
 
     output = Path(args.output)

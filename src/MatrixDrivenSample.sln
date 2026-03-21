@@ -5,9 +5,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FCFB9A6C-7127-4FB8-84BB-A17EBC88EECA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PurchaseLibrary", "src\PurchaseLibrary\PurchaseLibrary.csproj", "{0A0C95B4-3AE8-4657-8194-5F7AC8202B39}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PurchaseLibrary", "PurchaseLibrary\PurchaseLibrary.csproj", "{0A0C95B4-3AE8-4657-8194-5F7AC8202B39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PurchaseLibrary.Tests", "src\PurchaseLibrary.Tests\PurchaseLibrary.Tests.csproj", "{A13E3A45-BA93-4CDD-8374-3C072D8360F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PurchaseLibrary.Tests", "PurchaseLibrary.Tests\PurchaseLibrary.Tests.csproj", "{A13E3A45-BA93-4CDD-8374-3C072D8360F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
