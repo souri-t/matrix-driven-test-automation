@@ -35,6 +35,10 @@ python3 .github/skills/matrix-driven-test-automation/scripts/build_ai_request.py
 python3 .github/skills/matrix-driven-test-automation/scripts/materialize_ai_tests.py --input artifacts/sample_ai_response.md --output src/PurchaseLibrary.Tests/Generated/PurchaseServiceMatrixAiTests.cs
 ```
 
+## Dependencies
+
+- Python dependency manifest: `.github/skills/matrix-driven-test-automation/requirements.txt`
+
 ## Notes
 
 - The matrix schema is shared in `matrix_schema.py`.
