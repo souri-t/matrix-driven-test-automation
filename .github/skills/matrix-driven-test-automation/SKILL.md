@@ -15,6 +15,18 @@ The matrix is schema-light: `ID`, `expected`, and `memo` are required; other col
 - AI request generation for MSTest code
 - AI response materialization into `.cs` MSTest files
 
+## One-shot request
+
+Use this natural-language request to run the generation flow in one go:
+
+- 「現在のJSONのテストマトリクスからテストコードを作って」
+
+Expected bundled behavior:
+
+1. Generate Gherkin from current JSON
+2. Generate AI request artifacts
+3. Materialize test code from AI response markdown
+
 ## Script locations
 
 All scripts are under:
