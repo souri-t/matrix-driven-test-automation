@@ -24,6 +24,9 @@ def collect_headers(rows: list[dict[str, object]]) -> list[str]:
     if "expected" in headers:
         headers.remove("expected")
         headers.append("expected")
+    if "memo" in headers:
+        headers.remove("memo")
+        headers.append("memo")
 
     return headers
 
@@ -41,7 +44,7 @@ def main() -> None:
         raise ValueError("Each JSON row must be an object")
 
     headers = collect_headers(rows)
-    input_headers = [h for h in headers if h not in ("id", "expected")]
+    input_headers = [h for h in headers if h not in ("id", "expected", "memo")]
 
     steps = ['    When テスト対象を実行する']
     if input_headers:

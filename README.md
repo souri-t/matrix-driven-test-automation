@@ -65,7 +65,8 @@
 
 ## 補足
 
-- マトリクスは `ID` と `expected` を必須列とし、それ以外の列はテストケースごとに可変です。
+- マトリクスは `ID`、`expected`、`memo` を必須列とし、それ以外の列はテストケースごとに可変です。
+- `memo` は備考欄で、テスト結果判定には使用しません。
 - JSONバリデーションは `excel_to_json` 実行時に自動で行われます（必須列、ID重複チェック）。
 - 既存JSONのみを再確認したい場合は、`validate_matrix_json` を補助的に利用できます。
 - 最終確認は `dotnet test src/MatrixDrivenSample.sln` で実行可能です。

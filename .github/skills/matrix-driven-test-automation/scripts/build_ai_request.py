@@ -33,6 +33,7 @@ Generate MSTest code for PurchaseService from the matrix.
 - Use [TestClass] and [DataTestMethod]
 - Use [DataRow] for each matrix row
 - Method name: Evaluate_MatrixCases_FromAi
+- `memo` is a note column and must NOT affect assertions.
 - Call: PurchaseService.Evaluate(new PurchaseRequest(userType, payment, product))
 - Assert: Assert.AreEqual(expected, actual, $"{{id}}: expected={{expected}}, actual={{actual}}")
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-REQUIRED_COLUMNS = ["id", "expected"]
+REQUIRED_COLUMNS = ["id", "expected", "memo"]
 
 
 def normalize_column_name(name: str) -> str:

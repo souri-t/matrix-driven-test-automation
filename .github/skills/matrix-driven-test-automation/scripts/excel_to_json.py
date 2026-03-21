@@ -49,6 +49,8 @@ def main() -> None:
         if rid in ids:
             raise ValueError(f"Duplicated ID: {rid}")
         ids.add(rid)
+        if not item.get("expected", ""):
+            raise ValueError(f"Found row with empty expected (ID={rid})")
 
         result.append(item)
 

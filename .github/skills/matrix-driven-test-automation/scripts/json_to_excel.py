@@ -29,6 +29,9 @@ def collect_headers(data: list[dict[str, object]]) -> list[str]:
     if "expected" in headers:
         headers.remove("expected")
         headers.append("expected")
+    if "memo" in headers:
+        headers.remove("memo")
+        headers.append("memo")
 
     return headers
 

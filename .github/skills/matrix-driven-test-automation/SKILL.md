@@ -4,7 +4,7 @@ description: Generate and maintain matrix-driven test assets for this repository
 ---
 
 This skill provides scripts for the matrix-driven testing workflow used in this repository.
-The matrix is schema-light: `ID` and `expected` are required, other columns are optional and case-specific.
+The matrix is schema-light: `ID`, `expected`, and `memo` are required; other columns are optional and case-specific.
 
 ## Scope
 
@@ -42,7 +42,8 @@ python3 .github/skills/matrix-driven-test-automation/scripts/materialize_ai_test
 ## Notes
 
 - The matrix schema is shared in `matrix_schema.py`.
-- `excel_to_json.py` fails fast when required columns (`ID`, `expected`) are missing or IDs are duplicated.
-- Columns other than `ID` and `expected` are treated as variable test input columns.
+- `excel_to_json.py` fails fast when required columns (`ID`, `expected`, `memo`) are missing or IDs are duplicated.
+- `memo` is a non-test note column and should not affect assertions.
+- Columns other than `ID`, `expected`, and `memo` are treated as variable test input columns.
 - Use `id` as the stable test case key for traceability.
 - Keep generated test files under `src/PurchaseLibrary.Tests/Generated/`.

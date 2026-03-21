@@ -25,14 +25,19 @@ def main() -> None:
             continue
 
         for col in REQUIRED_COLUMNS:
-            if not row.get(col):
+            if col not in row:
                 errors.append(f"Row#{idx}: missing required '{col}'")
 
         rid = row.get("id")
+        if not rid:
+            errors.append(f"Row#{idx}: empty 'id'")
         if rid:
             if rid in ids:
                 errors.append(f"Row#{idx}: duplicated id '{rid}'")
             ids.add(rid)
+
+        if not row.get("expected"):
+            errors.append(f"Row#{idx}: empty 'expected'")
 
     if errors:
         print("Validation failed:")

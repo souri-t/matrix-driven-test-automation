@@ -12,12 +12,12 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = [
-        ["ID", "user_type", "payment", "product", "expected"],
-        ["TC001", "normal", "credit", "normal", "success"],
-        ["TC002", "normal", "cash", "normal", "success"],
-        ["TC003", "normal", "cash", "restricted", "forbidden"],
-        ["TC004", "premium", "cash", "restricted", "failed"],
-        ["TC005", "blacklisted", "credit", "normal", "blocked"],
+        ["ID", "user_type", "payment", "product", "expected", "memo"],
+        ["TC001", "normal", "credit", "normal", "success", "基本パス"],
+        ["TC002", "normal", "cash", "normal", "success", "現金決済"],
+        ["TC003", "normal", "cash", "restricted", "forbidden", "制限商品"],
+        ["TC004", "premium", "cash", "restricted", "failed", "仕様確認ケース"],
+        ["TC005", "blacklisted", "credit", "normal", "blocked", "ブラックリスト"],
     ]
 
     wb = Workbook()
