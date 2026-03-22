@@ -29,6 +29,13 @@ Copilot Agent に次のように依頼します。
 - 「現在のJSONのテストマトリクスからテストコードを作って」
 - 「既存のテストコードからテストマトリクスJSONを作って」
 
+## スラッシュコマンド
+
+- `/matrix-sample-excel`: テストマトリクス用のサンプルExcelを作成する
+- `/matrix-excel-to-json`: ExcelテストマトリクスをJSONへ変換する（必要に応じて検証）
+- `/matrix-json-to-testcode`: 現在のJSONからAI依頼生成とテストコード反映をまとめて実行する
+- `/matrix-reverse-from-testcode`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
+
 ## 既にテストコードを作成済みの場合
 
 既存テストコードから逆変換してJSONを作ることができます。
