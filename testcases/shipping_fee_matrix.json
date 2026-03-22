@@ -1,0 +1,119 @@
+[
+  {
+    "id": "SF001",
+    "destination_region": "unsupported",
+    "member_tier": "regular",
+    "order_amount": "-1",
+    "is_fragile": "false",
+    "expected": "unavailable",
+    "memo": "unsupported最優先。金額不正より先に判定"
+  },
+  {
+    "id": "SF002",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "-1",
+    "is_fragile": "true",
+    "expected": "invalid",
+    "memo": "負の金額"
+  },
+  {
+    "id": "SF003",
+    "destination_region": "local",
+    "member_tier": "platinum",
+    "order_amount": "5000",
+    "is_fragile": "false",
+    "expected": "free",
+    "memo": "platinum特典境界値"
+  },
+  {
+    "id": "SF004",
+    "destination_region": "local",
+    "member_tier": "platinum",
+    "order_amount": "5000",
+    "is_fragile": "true",
+    "expected": "standard",
+    "memo": "platinumかつ破損注意"
+  },
+  {
+    "id": "SF005",
+    "destination_region": "remote",
+    "member_tier": "platinum",
+    "order_amount": "5000",
+    "is_fragile": "false",
+    "expected": "free",
+    "memo": "platinum判定がremoteより優先"
+  },
+  {
+    "id": "SF006",
+    "destination_region": "remote",
+    "member_tier": "regular",
+    "order_amount": "7000",
+    "is_fragile": "false",
+    "expected": "medium",
+    "memo": "remote通常ルール"
+  },
+  {
+    "id": "SF007",
+    "destination_region": "remote",
+    "member_tier": "regular",
+    "order_amount": "7000",
+    "is_fragile": "true",
+    "expected": "high",
+    "memo": "remoteかつ破損注意"
+  },
+  {
+    "id": "SF008",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "10000",
+    "is_fragile": "false",
+    "expected": "free",
+    "memo": ">=10000境界値"
+  },
+  {
+    "id": "SF009",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "10000",
+    "is_fragile": "true",
+    "expected": "medium",
+    "memo": ">=10000かつ破損注意"
+  },
+  {
+    "id": "SF010",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "3000",
+    "is_fragile": "false",
+    "expected": "low",
+    "memo": ">=3000境界値"
+  },
+  {
+    "id": "SF011",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "3000",
+    "is_fragile": "true",
+    "expected": "medium",
+    "memo": ">=3000かつ破損注意"
+  },
+  {
+    "id": "SF012",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "0",
+    "is_fragile": "false",
+    "expected": "standard",
+    "memo": "最終分岐(非破損)"
+  },
+  {
+    "id": "SF013",
+    "destination_region": "local",
+    "member_tier": "regular",
+    "order_amount": "0",
+    "is_fragile": "true",
+    "expected": "high",
+    "memo": "最終分岐(破損注意)"
+  }
+]
