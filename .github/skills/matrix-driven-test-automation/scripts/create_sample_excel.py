@@ -1,24 +1,37 @@
 from __future__ import annotations
 
 import argparse
+from itertools import product
 from pathlib import Path
 
 from openpyxl import Workbook
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Create a sample Excel matrix for PurchaseService.")
+    parser = argparse.ArgumentParser(description="Create a sample Excel matrix for ramen ticket combinations.")
     parser.add_argument("--output", default="testcases/purchase_matrix.xlsx")
     args = parser.parse_args()
 
+    soups = ["塩", "醤油", "味噌"]
+    noodle_thickness = ["細麺", "太麺"]
+    noodle_amount = ["普通", "大盛り"]
+
     rows = [
-        ["ID", "user_type", "payment", "product", "expected", "memo"],
-        ["TC001", "normal", "credit", "normal", "success", "基本パス"],
-        ["TC002", "normal", "cash", "normal", "success", "現金決済"],
-        ["TC003", "normal", "cash", "restricted", "forbidden", "制限商品"],
-        ["TC004", "premium", "cash", "restricted", "failed", "仕様確認ケース"],
-        ["TC005", "blacklisted", "credit", "normal", "blocked", "ブラックリスト"],
+        ["ID", "スープ", "麺の太さ", "麺の量", "expected", "memo"],
     ]
+
+    combinations = product(soups, noodle_thickness, noodle_amount)
+    for index, (soup, thickness, amount) in enumerate(combinations, start=1):
+        rows.append(
+            [
+                f"TC{index:03}",
+                soup,
+                thickness,
+                amount,
+                f"食券{index}",
+                "組み合わせ確認",
+            ]
+        )
 
     wb = Workbook()
     ws = wb.active

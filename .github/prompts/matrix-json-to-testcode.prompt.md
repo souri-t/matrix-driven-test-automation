@@ -1,5 +1,6 @@
 ---
-mode: agent
+agent: agent
+model: GPT-5.3-Codex
 description: 現在のJSONテストマトリクスからテストコードを反映する
 ---
 

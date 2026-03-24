@@ -1,5 +1,6 @@
 ---
-mode: agent
+agent: agent
+model: GPT-5.3-Codex
 description: 既存テストコードからテストマトリクスJSONを逆生成する
 ---
 

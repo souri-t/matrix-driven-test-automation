@@ -1,55 +1,88 @@
-# テストマトリクス変換スキル
+# テスト設計スキル
 
-このリポジトリには、テストマトリクスを扱うための GitHub Copilot Agent Skill が用意されています。
+このリポジトリには、用途を分けた 2 つの GitHub Copilot Agent Skill があります。
 
-- スキル定義: `.github/skills/matrix-driven-test-automation/SKILL.md`
-- スクリプト群: `.github/skills/matrix-driven-test-automation/scripts/`
+- マトリクス駆動テスト自動化: `.github/skills/matrix-driven-test-automation/SKILL.md`
+- ワークブックJSON/Excel相互変換: `.github/skills/workbook-json-excel-interop/SKILL.md`
 
-## このスキルでできること
+## 1. matrix-driven-test-automation
+
+スクリプト群:
+
+- `.github/skills/matrix-driven-test-automation/scripts/`
+
+できること:
 
 - テストマトリクス用のサンプルExcel（`.xlsx`）を作成する
-- Excelテストマトリクス（`.xlsx`）を JSON に変換する
 - JSON の妥当性を検証する
 - 現在のプロジェクト構成（言語・テストフレームワーク）を推測して、AI向けのテスト生成依頼ファイルを作る
 - AI回答からテストコードを取り込み、推測した適切な出力先へ反映する
 - すでに作成済みのテストコード（DataRowベース）を逆変換してJSONマトリクスを作る
 
-## データ仕様
+## 2. workbook-json-excel-interop
 
-- 必須列: `ID`, `expected`, `memo`
-- `memo` は備考列で、テストの合否判定には使わない
-- 上記以外の列は、ケースごとの可変入力列として扱う
+スクリプト群:
+
+- `.github/skills/workbook-json-excel-interop/scripts/`
+
+できること:
+
+- Excel（複数シート）をワークブックJSONに変換する
+- ワークブックJSONからExcelをリストアする
+- 「因子と水準」「テストケース」構成のExcelをJSONで受け渡しする
+
+## JSONフォーマット（ワークブック）
+
+`workbook-json-excel-interop` が扱うJSONは次の形式です。
+
+```json
+{
+	"sheets": [
+		{
+			"name": "因子と水準",
+			"columns": ["因子", "水準1", "水準2", "水準3", "備考"],
+			"rows": [
+				{
+					"因子": "Soup",
+					"水準1": "塩",
+					"水準2": "醤油",
+					"水準3": "味噌",
+					"備考": "必須"
+				}
+			]
+		},
+		{
+			"name": "テストケース",
+			"columns": ["ID", "Soup", "NoodleThickness", "NoodleAmount", "expected", "memo"],
+			"rows": [
+				{
+					"ID": "TC-001",
+					"Soup": "塩",
+					"NoodleThickness": "細麺",
+					"NoodleAmount": "普通",
+					"expected": "200 OK / 食券1",
+					"memo": "pairwise(valid)"
+				}
+			]
+		}
+	]
+}
+```
 
 ## 使い方（推奨）
 
 Copilot Agent に次のように依頼します。
 
 - 「テストマトリクスのサンプルExcelを作って」
-- 「テストケースExcelをJSONに変換して」
+- 「ワークブックExcelをJSONへ変換して」
+- 「ワークブックJSONからExcelをリストアして」
 - 「現在のJSONのテストマトリクスからテストコードを作って」
 - 「既存のテストコードからテストマトリクスJSONを作って」
 
 ## スラッシュコマンド
 
 - `/matrix-sample-excel`: テストマトリクス用のサンプルExcelを作成する
-- `/matrix-excel-to-json`: ExcelテストマトリクスをJSONへ変換する（必要に応じて検証）
+- `/matrix-excel-to-json`: 因子/テストケースExcelをワークブックJSONへ変換する
+- `/workbook-json-to-excel`: ワークブックJSONからExcelをリストアする
 - `/matrix-json-to-testcode`: 現在のJSONからAI依頼生成とテストコード反映をまとめて実行する
 - `/matrix-reverse-from-testcode`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
-
-## 既にテストコードを作成済みの場合
-
-既存テストコードから逆変換してJSONを作ることができます。
-
-- 想定: `src/...Tests/...` の DataRow ベースのテストコード
-- 出力: `testcases/reversed_matrix.json`（既定）
-- 依頼例: 「既存のテストコードからテストマトリクスJSONを作って」
-
-補足:
-
-- 必須列 `id`, `expected`, `memo` を含む形式で出力します。
-- `memo` がテストコードにない場合は空文字で補完します。
-
-## 補足
-
-- 既存の生成先ファイルがある場合、テストコード反映時にそのファイルは上書きされます。
-- 最終的なテスト実行は、プロジェクトに合わせて通常のテストコマンドで実施してください（例: `dotnet test src/MatrixDrivenSample.sln`）。
