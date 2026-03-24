@@ -81,6 +81,7 @@ Copilot Agent に次のように依頼します。
 
 ## スラッシュコマンド
 
+- `/code-to-testcase`: 指定コードの入出力から因子/水準を抽出し、ペアワイズのテストケースExcelを作成する
 - `/matrix-sample-excel`: テストマトリクス用のサンプルExcelを作成する
 - `/matrix-excel-to-json`: 因子/テストケースExcelをワークブックJSONへ変換する
 - `/workbook-json-to-excel`: ワークブックJSONからExcelをリストアする
