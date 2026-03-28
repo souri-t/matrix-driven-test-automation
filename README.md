@@ -9,12 +9,13 @@
 
 - 指定コードから因子/水準とペアワイズのテストケースを設計し、Excel化する
 - 「因子と水準」「テストケース」構成のExcelをJSONへ変換する
-- JSONマトリクスからAI依頼を作成し、AI応答からテストコードを反映する
+- testcase JSON（workbook形式）からテストコードを反映する
 - 既存テストコード（DataRowベース）からJSONマトリクスを逆生成する
 
 ## JSONフォーマット（ワークブック）
 
 `matrix-excel-to-json` で出力されるJSONは次の形式です。
+出力ファイル名は、入力Excelと同名で拡張子のみ `.json` にします。
 
 ```json
 {
@@ -56,7 +57,7 @@ Copilot Agent に次のように依頼します。
 
 - 「コードからテストケースを設計して（Excelまで）」
 - 「ワークブックExcelをJSONへ変換して」
-- 「現在のJSONのテストマトリクスからテストコードを作って」
+- 「testcase JSON からテストコードを作って（testcode-writer）」
 - 「既存のテストコードからテストマトリクスJSONを作って」
 
 ## スラッシュコマンド
@@ -64,15 +65,14 @@ Copilot Agent に次のように依頼します。
 - `/code-to-testcase`: 指定コードの入出力から因子/水準を抽出し、ペアワイズ結果を `testcases/testcase_<class>_<method>.xlsx` 形式（`testcase_` 必須）で出力する
 - `/matrix-sample-excel`: prompts/scripts のサンプルExcelを作成する
 - `/matrix-excel-to-json`: 因子/テストケースExcelをワークブックJSONへ変換する
-- `/matrix-json-to-testcode`: 実装フェーズの入口。専用エージェント `testcode-writer` に委譲してテストコードを反映する
 - `/matrix-reverse-from-testcode`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
 
 ## 役割分離
 
 - テストケース作成（設計フェーズ）: `/code-to-testcase` → `/matrix-excel-to-json`
-- テストコード作成（実装フェーズ）: `/matrix-json-to-testcode` → `testcode-writer`
+- テストコード作成（実装フェーズ）: `testcode-writer`（直接呼び出し）
 
-`testcode-writer` は、`artifacts/ai_test_request.md` / `artifacts/ai_test_bundle.json` / `artifacts/sample_ai_response.md` を境界ファイルとして扱い、テストコード反映のみを担当します。
+`testcode-writer` は、`testcases/testcase_*.json`（workbook形式）を唯一の前提入力として扱い、テストコード反映のみを担当します。
 
 ## ワークフロー
 
@@ -97,24 +97,13 @@ note right
 入力:
 - testcases/testcase_<class>_<method>.xlsx
 出力:
-- testcases/workbook_payload.json
+- testcases/testcase_<class>_<method>.json
 end note
-
-:matrix-json-to-testcode.prompt.md;
-note right
-入力:
-- testcases/purchase_matrix.json
-出力:
-- artifacts/ai_test_request.md
-- artifacts/ai_test_bundle.json
-end note
-
-:artifacts/sample_ai_response.md を用意;
 
 :testcode-writer.agent.md;
 note right
 入力:
-- artifacts/sample_ai_response.md
+- testcases/testcase_<class>_<method>.json
 出力:
 - 推測された生成先のテストコード
 end note
@@ -135,6 +124,5 @@ stop
 
 - `/code-to-testcase`: 対象ソースコード（例: `src/RamenTicketApi/Models/TicketRequest.cs`, `src/RamenTicketApi/Services/TicketService.cs`）
 - `/matrix-excel-to-json`: `testcases/testcase_<class>_<method>.xlsx`（`testcase_` 接頭辞）
-- `/matrix-json-to-testcode`: `testcases/purchase_matrix.json`（実装フェーズ入口）
-- `testcode-writer`: `artifacts/ai_test_request.md`, `artifacts/ai_test_bundle.json`, `artifacts/sample_ai_response.md`
+- `testcode-writer`: `testcases/testcase_<class>_<method>.json`（workbook形式、`sheets` 配列）
 - `/matrix-reverse-from-testcode`: 既存テストコードファイル（DataRowベース）

@@ -64,13 +64,14 @@ def sheet_to_payload(ws) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert workbook Excel to workbook JSON payload.")
     parser.add_argument("--input", required=True)
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--output", required=False)
     args = parser.parse_args()
 
-    wb = load_workbook(args.input)
+    input_path = Path(args.input)
+    wb = load_workbook(input_path)
     payload = {"sheets": [sheet_to_payload(wb[sn]) for sn in wb.sheetnames]}
 
-    output = Path(args.output)
+    output = Path(args.output) if args.output else input_path.with_suffix(".json")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
