@@ -24,7 +24,9 @@ description: 指定ファイル/フォルダの入出力から因子水準を抽
    - memo
 5. 各テストケースの expected は、対象コードの分岐・返却値・仕様記述から推測して具体値を必ず記載する。
   - 判定不能な場合のみ、理由を memo に明記した上で expected を「要確認」とする。
-6. 出力ファイルは `testcases/code_to_testcase.xlsx` とする。
+6. 出力ファイル名は `testcase_` で始める。
+   - 推奨: `testcases/testcase_<class>_<method>.xlsx`（例: `testcases/testcase_ticketservice_resolveexpected.xlsx`）
+   - class名/method名の特定が難しい場合も、`testcase_` 接頭辞は必須とする。
 
 実行手順:
 - 対象ソースから入力パラメータ、分岐条件、返却値を抽出する。
@@ -36,6 +38,7 @@ description: 指定ファイル/フォルダの入出力から因子水準を抽
   - テストケース
 - `テストケース` シートには `ID`, 各因子列, `expected`, `memo` を記載する。
 - JSONファイルは作成しない。
+- ファイル名は `testcase_` 接頭辞を必須とし、可能な限り class名とmethod名を含める。
 - 作成後に保存先パスとケース件数を報告する。
 
 補足ルール:

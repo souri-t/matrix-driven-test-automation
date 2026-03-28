@@ -61,11 +61,18 @@ Copilot Agent に次のように依頼します。
 
 ## スラッシュコマンド
 
-- `/code-to-testcase`: 指定コードの入出力から因子/水準を抽出し、ペアワイズ結果を `testcases/code_to_testcase.xlsx` に出力する
+- `/code-to-testcase`: 指定コードの入出力から因子/水準を抽出し、ペアワイズ結果を `testcases/testcase_<class>_<method>.xlsx` 形式（`testcase_` 必須）で出力する
 - `/matrix-sample-excel`: prompts/scripts のサンプルExcelを作成する
 - `/matrix-excel-to-json`: 因子/テストケースExcelをワークブックJSONへ変換する
-- `/matrix-json-to-testcode`: 現在のJSONからAI依頼生成とテストコード反映をまとめて実行する
+- `/matrix-json-to-testcode`: 実装フェーズの入口。専用エージェント `testcode-writer` に委譲してテストコードを反映する
 - `/matrix-reverse-from-testcode`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
+
+## 役割分離
+
+- テストケース作成（設計フェーズ）: `/code-to-testcase` → `/matrix-excel-to-json`
+- テストコード作成（実装フェーズ）: `/matrix-json-to-testcode` → `testcode-writer`
+
+`testcode-writer` は、`artifacts/ai_test_request.md` / `artifacts/ai_test_bundle.json` / `artifacts/sample_ai_response.md` を境界ファイルとして扱い、テストコード反映のみを担当します。
 
 ## ワークフロー
 
@@ -82,13 +89,13 @@ note right
 	例 src/RamenTicketApi/Models/TicketRequest.cs
 	例 src/RamenTicketApi/Services/TicketService.cs
 出力:
-- testcases/code_to_testcase.xlsx
+- testcases/testcase_<class>_<method>.xlsx
 end note
 
 :matrix-excel-to-json.prompt.md;
 note right
 入力:
-- testcases/code_to_testcase.xlsx
+- testcases/testcase_<class>_<method>.xlsx
 出力:
 - testcases/workbook_payload.json
 end note
@@ -104,8 +111,7 @@ end note
 
 :artifacts/sample_ai_response.md を用意;
 
-:matrix-json-to-testcode.prompt.md
-	(materialize_ai_tests.py 実行);
+:testcode-writer.agent.md;
 note right
 入力:
 - artifacts/sample_ai_response.md
@@ -128,6 +134,7 @@ stop
 ### ノードに渡す前提ファイル
 
 - `/code-to-testcase`: 対象ソースコード（例: `src/RamenTicketApi/Models/TicketRequest.cs`, `src/RamenTicketApi/Services/TicketService.cs`）
-- `/matrix-excel-to-json`: `testcases/code_to_testcase.xlsx`
-- `/matrix-json-to-testcode`: `testcases/purchase_matrix.json`, `artifacts/sample_ai_response.md`
+- `/matrix-excel-to-json`: `testcases/testcase_<class>_<method>.xlsx`（`testcase_` 接頭辞）
+- `/matrix-json-to-testcode`: `testcases/purchase_matrix.json`（実装フェーズ入口）
+- `testcode-writer`: `artifacts/ai_test_request.md`, `artifacts/ai_test_bundle.json`, `artifacts/sample_ai_response.md`
 - `/matrix-reverse-from-testcode`: 既存テストコードファイル（DataRowベース）

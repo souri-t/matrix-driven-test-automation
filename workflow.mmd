@@ -1,15 +1,16 @@
 flowchart TD
     A(["対象コードを指定<br>例: TicketRequest.cs / TicketService.cs"]) --> B["code-to-testcase"]
-    B --> C(["testcases/code_to_testcase.xlsx<br>シート: 因子と水準 / テストケース"])
+    B --> C(["testcases/testcase_<class>_<method>.xlsx<br>シート: 因子と水準 / テストケース"])
 
     C --> D["matrix-excel-to-json"]
     D --> E(["testcases/workbook_payload.json"])
 
     E --> F["matrix-json-to-testcode"]
-    F --> G(["artifacts/ai_test_request.md<br>artifacts/ai_test_bundle.json"])
-    G --> H["AI に依頼して回答を取得"]
-    H --> I(["artifacts/sample_ai_response.md"])
-    I --> J["matrix-json-to-testcode"]
+    F --> G["testcode-writer"]
+    G --> H(["artifacts/ai_test_request.md<br>artifacts/ai_test_bundle.json"])
+    H --> I["AI に依頼して回答を取得"]
+    I --> J(["artifacts/sample_ai_response.md"])
+    J --> G
     J --> K(["推測された生成先のテストコード"])
 
     L(["既存テストコード"]) --> M["matrix-reverse-from-testcode"]
@@ -19,9 +20,11 @@ flowchart TD
     classDef promptClass fill:#DDEBF7,stroke:#2F75B5,stroke-width:1px;
     classDef fileClass fill:#FFF2CC,stroke:#BF9000,stroke-width:1px;
     classDef actionClass fill:#E2EFDA,stroke:#4F6228,stroke-width:1px;
+    classDef agentClass fill:#FCE4D6,stroke:#C65911,stroke-width:1px;
     classDef codeClass fill:#F2F2F2,stroke:#7F7F7F,stroke-width:1px;
 
-    class B,D,F,J,M promptClass;
-    class C,E,G,I,N fileClass;
-    class H actionClass;
+    class B,D,F,M promptClass;
+    class C,E,H,J,N fileClass;
+    class I actionClass;
+    class G agentClass;
     class A,K,L codeClass;
