@@ -24,22 +24,18 @@ description: 指定ファイル/フォルダの入出力から因子水準を抽
    - memo
 5. 各テストケースの expected は、対象コードの分岐・返却値・仕様記述から推測して具体値を必ず記載する。
   - 判定不能な場合のみ、理由を memo に明記した上で expected を「要確認」とする。
-6. 出力ファイルは testcases フォルダ配下に .xlsx 形式で保存する。
+6. 出力ファイルは `testcases/code_to_testcase.xlsx` とする。
 
 実行手順:
 - 対象ソースから入力パラメータ、分岐条件、返却値を抽出する。
 - 因子(入力軸)と水準(値候補)を確定する。
 - 返却値のルールをテスト可能な expected として整理し、全ケースに反映する。
 - ペアワイズでケース選定する。
-- まず `testcases/workbook_payload.json` を生成する。JSONは次の形にする:
-  - ルートに `sheets` 配列
-  - 各要素は `name`, `columns`, `rows` を持つ
-  - `rows` は配列またはオブジェクト配列
-- 次のコマンドでExcelを生成する:
-  - `python3 .github/skills/workbook-json-excel-interop/scripts/workbook_json_to_excel.py --input testcases/workbook_payload.json --output testcases/<任意名>.xlsx`
-- Excelには次の2シートを出力する。
+- Excelに次の2シートを作成する。
   - 因子と水準
   - テストケース
+- `テストケース` シートには `ID`, 各因子列, `expected`, `memo` を記載する。
+- JSONファイルは作成しない。
 - 作成後に保存先パスとケース件数を報告する。
 
 補足ルール:
