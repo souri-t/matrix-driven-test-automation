@@ -2,8 +2,9 @@
 
 このリポジトリは、`prompts` と `scripts` のみで運用します。
 
-- プロンプト定義: `.github/prompts/*.prompt.md`
-- 実行スクリプト: `.github/prompts/scripts/*.py`
+- Codex向けプロンプト定義: `.codex/prompts/*.prompt.md`
+- Codex向けエージェント定義: `.codex/agents/*.agent.md`
+- 実行スクリプト: `.codex/prompts/scripts/*.py`
 
 ## 主な機能
 
@@ -53,23 +54,23 @@
 
 ## 使い方（推奨）
 
-Copilot Agent に次のように依頼します。
+Codex に次のように依頼します。必要に応じて `.codex/prompts` または `.codex/agents` の該当ファイルを参照させてください。
 
 - 「コードからテストケースを設計して（Excelまで）」
 - 「ワークブックExcelをJSONへ変換して」
 - 「testcase JSON からテストコードを作って（testcode-writer）」
 - 「既存のテストコードからテストマトリクスJSONを作って」
 
-## スラッシュコマンド
+## Codexプロンプト
 
-- `/code-to-testcase`: 指定コードの入出力から因子/水準を抽出し、ペアワイズ結果を `testcases/testcase_<class>_<method>.xlsx` 形式（`testcase_` 必須）で出力する
-- `/matrix-sample-excel`: prompts/scripts のサンプルExcelを作成する
-- `/matrix-excel-to-json`: 因子/テストケースExcelをワークブックJSONへ変換する
-- `/matrix-reverse-from-testcode`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
+- `code-to-testcase.prompt.md`: 指定コードの入出力から因子/水準を抽出し、ペアワイズ結果を `testcases/testcase_<class>_<method>.xlsx` 形式（`testcase_` 必須）で出力する
+- `matrix-sample-excel.prompt.md`: `.codex/prompts/scripts` のサンプルExcelを作成する
+- `matrix-excel-to-json.prompt.md`: 因子/テストケースExcelをワークブックJSONへ変換する
+- `matrix-reverse-from-testcode.prompt.md`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
 
 ## 役割分離
 
-- テストケース作成（設計フェーズ）: `/code-to-testcase` → `/matrix-excel-to-json`
+- テストケース作成（設計フェーズ）: `code-to-testcase.prompt.md` → `matrix-excel-to-json.prompt.md`
 - テストコード作成（実装フェーズ）: `testcode-writer`（直接呼び出し）
 
 `testcode-writer` は、`testcases/testcase_*.json`（workbook形式）を唯一の前提入力として扱い、テストコード反映のみを担当します。
@@ -120,9 +121,9 @@ stop
 @enduml
 ```
 
-### ノードに渡す前提ファイル
+### Codexに渡す前提ファイル
 
-- `/code-to-testcase`: 対象ソースコード（例: `src/RamenTicketApi/Models/TicketRequest.cs`, `src/RamenTicketApi/Services/TicketService.cs`）
-- `/matrix-excel-to-json`: `testcases/testcase_<class>_<method>.xlsx`（`testcase_` 接頭辞）
+- `code-to-testcase.prompt.md`: 対象ソースコード（例: `src/RamenTicketApi/Models/TicketRequest.cs`, `src/RamenTicketApi/Services/TicketService.cs`）
+- `matrix-excel-to-json.prompt.md`: `testcases/testcase_<class>_<method>.xlsx`（`testcase_` 接頭辞）
 - `testcode-writer`: `testcases/testcase_<class>_<method>.json`（workbook形式、`sheets` 配列）
-- `/matrix-reverse-from-testcode`: 既存テストコードファイル（DataRowベース）
+- `matrix-reverse-from-testcode.prompt.md`: 既存テストコードファイル（DataRowベース）
