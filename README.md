@@ -1,22 +1,85 @@
 # テスト設計ツール
 
-このリポジトリは、`prompts` と `scripts` のみで運用します。
+Codex のスラッシュコマンドとサブエージェントを使って、コードからテストケースを設計し、テストコードへ反映するためのツールです。
 
-- Codex向けプロンプト定義: `.codex/prompts/*.prompt.md`
-- Codex向けエージェント定義: `.codex/agents/*.agent.md`
-- 実行スクリプト: `.codex/prompts/scripts/*.py`
+このリポジトリは、Codex向けのスラッシュコマンドとサブエージェントのみで運用します。
 
-## 主な機能
+- スラッシュコマンド用プロンプト: `.codex/prompts/*.prompt.md`
+- サブエージェント定義: `.codex/agents/*.agent.md`
 
-- 指定コードから因子/水準とペアワイズのテストケースを設計し、Excel化する
-- 「因子と水準」「テストケース」構成のExcelをJSONへ変換する
-- testcase JSON（workbook形式）からテストコードを反映する
-- 既存テストコード（DataRowベース）からJSONマトリクスを逆生成する
+## できること
 
-## JSONフォーマット（ワークブック）
+- 指定したコードから因子/水準を抽出し、ペアワイズのテストケースのExcelを作成する
+- テストケースのExcelを、テストコード生成用の中間ファイルへ変換する
+- 中間ファイルを入力として、サブエージェントにテストコード作成を依頼する
+- 既存テストコードからテストケース情報を逆生成する
 
-`matrix-excel-to-json` で出力されるJSONは次の形式です。
-出力ファイル名は、入力Excelと同名で拡張子のみ `.json` にします。
+## 基本の使い方
+
+基本は、スラッシュコマンドで設計・変換を実行し、テストコード作成だけをサブエージェント `testcode-writer` に依頼します。
+
+1. `/code-to-testcase` で、対象コードからテストケースのExcelを作成する
+2. `/matrix-excel-to-json` で、テストケースのExcelを中間ファイルへ変換する
+3. `testcode-writer` に、中間ファイルからテストコード作成を依頼する
+
+既存テストコードからテストケース情報を取り出したい場合は、`/matrix-reverse-from-testcode` を使います。
+
+## 使い方のイメージ
+
+```mermaid
+flowchart TD
+    A(["対象コードを指定<br>例: TicketRequest.cs / TicketService.cs"]) --> B["コードからテストケースのExcelを作成<br>/code-to-testcase"]
+    B --> C(["testcases/testcase_&lt;class&gt;_&lt;method&gt;.xlsx<br>シート: 因子と水準 / テストケース"])
+
+    C --> D["テストケースのExcelから中間ファイルを生成<br>/matrix-excel-to-json"]
+    D --> E(["testcases/testcase_&lt;class&gt;_&lt;method&gt;.json"])
+
+    E --> G["testcode-writer にテストコード作成を依頼"]
+    G --> K(["推測された生成先のテストコード"])
+
+    L(["既存テストコード"]) --> M["既存テストコードから中間ファイルを生成<br>/matrix-reverse-from-testcode"]
+    M --> N(["testcases/reversed_matrix.json"])
+
+    classDef commandClass fill:#DDEBF7,stroke:#2F75B5,stroke-width:1px;
+    classDef fileClass fill:#FFF2CC,stroke:#BF9000,stroke-width:1px;
+    classDef agentClass fill:#FCE4D6,stroke:#C65911,stroke-width:1px;
+    classDef codeClass fill:#F2F2F2,stroke:#7F7F7F,stroke-width:1px;
+
+    class B,D,M commandClass;
+    class C,E,N fileClass;
+    class G agentClass;
+    class A,K,L codeClass;
+```
+
+## スラッシュコマンド
+
+- `/code-to-testcase`: 指定コードの入出力から因子/水準を抽出し、テストケースのExcelを作成する
+- `/matrix-excel-to-json`: テストケースのExcelを中間ファイルへ変換する
+- `/matrix-sample-excel`: サンプルのテストケースのExcelを作成する
+- `/matrix-reverse-from-testcode`: 既存テストコードから中間ファイルを逆生成する
+
+## サブエージェント
+
+- `testcode-writer`: 中間ファイルを唯一の入力として、テストコードを生成・反映する
+
+`testcode-writer` は、因子/水準の再設計やペアワイズ再計算は行いません。設計フェーズはスラッシュコマンドで完了させ、実装フェーズだけを `testcode-writer` に任せます。
+
+## ファイル運用
+
+- テストケースのExcel: `testcases/testcase_<class>_<method>.xlsx`
+- 中間ファイル: `testcases/testcase_<class>_<method>.json`
+- 逆生成した中間ファイル: `testcases/reversed_matrix.json`
+
+テストケースのExcelは、次の2シート構成です。
+
+- `因子と水準`
+- `テストケース`
+
+中間ファイルは、テストケースのExcelと同じ内容を workbook 形式で表現した `.json` 形式のファイルです。通常、利用者が直接編集するものではなく、`testcode-writer` に渡すための入力として扱います。
+
+## 中間ファイル形式
+
+`/matrix-excel-to-json` で作成される中間ファイルは、次の形式です。
 
 ```json
 {
@@ -51,79 +114,3 @@
 	]
 }
 ```
-
-## 使い方（推奨）
-
-Codex に次のように依頼します。必要に応じて `.codex/prompts` または `.codex/agents` の該当ファイルを参照させてください。
-
-- 「コードからテストケースを設計して（Excelまで）」
-- 「ワークブックExcelをJSONへ変換して」
-- 「testcase JSON からテストコードを作って（testcode-writer）」
-- 「既存のテストコードからテストマトリクスJSONを作って」
-
-## Codexプロンプト
-
-- `code-to-testcase.prompt.md`: 指定コードの入出力から因子/水準を抽出し、ペアワイズ結果を `testcases/testcase_<class>_<method>.xlsx` 形式（`testcase_` 必須）で出力する
-- `matrix-sample-excel.prompt.md`: `.codex/prompts/scripts` のサンプルExcelを作成する
-- `matrix-excel-to-json.prompt.md`: 因子/テストケースExcelをワークブックJSONへ変換する
-- `matrix-reverse-from-testcode.prompt.md`: 既存テストコード（DataRowベース）からテストマトリクスJSONを逆生成する
-
-## 役割分離
-
-- テストケース作成（設計フェーズ）: `code-to-testcase.prompt.md` → `matrix-excel-to-json.prompt.md`
-- テストコード作成（実装フェーズ）: `testcode-writer`（直接呼び出し）
-
-`testcode-writer` は、`testcases/testcase_*.json`（workbook形式）を唯一の前提入力として扱い、テストコード反映のみを担当します。
-
-## ワークフロー
-
-```plantuml
-@startuml
-title テスト設計ワークフロー（Promptノード）
-
-start
-
-:code-to-testcase.prompt.md;
-note right
-入力:
-- 対象ソースコード
-	例 src/RamenTicketApi/Models/TicketRequest.cs
-	例 src/RamenTicketApi/Services/TicketService.cs
-出力:
-- testcases/testcase_<class>_<method>.xlsx
-end note
-
-:matrix-excel-to-json.prompt.md;
-note right
-入力:
-- testcases/testcase_<class>_<method>.xlsx
-出力:
-- testcases/testcase_<class>_<method>.json
-end note
-
-:testcode-writer.agent.md;
-note right
-入力:
-- testcases/testcase_<class>_<method>.json
-出力:
-- 推測された生成先のテストコード
-end note
-
-if (既存テストコードをJSON化する?) then (yes)
-	:matrix-reverse-from-testcode.prompt.md;
-	note right
-	出力:
-	- testcases/reversed_matrix.json
-	end note
-endif
-
-stop
-@enduml
-```
-
-### Codexに渡す前提ファイル
-
-- `code-to-testcase.prompt.md`: 対象ソースコード（例: `src/RamenTicketApi/Models/TicketRequest.cs`, `src/RamenTicketApi/Services/TicketService.cs`）
-- `matrix-excel-to-json.prompt.md`: `testcases/testcase_<class>_<method>.xlsx`（`testcase_` 接頭辞）
-- `testcode-writer`: `testcases/testcase_<class>_<method>.json`（workbook形式、`sheets` 配列）
-- `matrix-reverse-from-testcode.prompt.md`: 既存テストコードファイル（DataRowベース）
