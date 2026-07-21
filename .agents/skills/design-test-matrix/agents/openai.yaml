@@ -1,7 +1,0 @@
-interface:
-  display_name: "テストマトリクス設計"
-  short_description: "コードから因子・水準とペアワイズテストケースを設計"
-  default_prompt: "$design-test-matrix を使って、指定コードのテストマトリクスをExcelで作成してください。"
-
-policy:
-  allow_implicit_invocation: true

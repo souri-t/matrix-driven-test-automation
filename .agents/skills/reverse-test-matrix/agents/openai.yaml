@@ -1,7 +1,0 @@
-interface:
-  display_name: "テストマトリクス逆生成"
-  short_description: "既存テストコードからworkbook形式のJSONを逆生成"
-  default_prompt: "$reverse-test-matrix を使って、指定した既存テストコードをJSONへ逆生成してください。"
-
-policy:
-  allow_implicit_invocation: true

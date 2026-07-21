@@ -1,7 +1,0 @@
-interface:
-  display_name: "マトリクステスト実装"
-  short_description: "確定済みJSONから既存形式に沿ったテストコードを実装"
-  default_prompt: "$write-matrix-tests を使って、指定したJSONからテストコードを実装してください。"
-
-policy:
-  allow_implicit_invocation: true

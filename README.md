@@ -1,49 +1,78 @@
 # テスト設計ツール
 
-コードからテストケースを設計し、Excel・JSON・テストコードへ段階的に反映するCodex向けツールです。Codex Appを中心に、CLIとIDEでも同じリポジトリ共有Skillを利用できます。
+コードからテストケースを設計し、Excel・JSON・テストコードへ段階的に反映するCodex向けカスタムエージェント集です。各プロジェクトへ `.codex/` を手動配置して利用します。
 
-## できること
+## 配置
 
-- 対象コードから因子・水準と期待結果を抽出し、ペアワイズのテストケースExcelを作る
-- Excelを同じ内容のworkbook形式JSONへ変換する
-- 確定済みJSONの全ケースを既存プロジェクト形式のテストコードへ反映する
-- 既存のMSTest DataRowテストからworkbook形式JSONを逆生成する
+このリポジトリの `.codex` フォルダを対象プロジェクトのルートへコピーします。
 
-## 使い方
+```text
+target-project/
+├── .codex/
+│   ├── agents/
+│   │   ├── design-test-matrix.toml
+│   │   ├── convert-test-matrix.toml
+│   │   ├── testcode-writer.toml
+│   │   └── reverse-test-matrix.toml
+│   └── scripts/
+│       ├── workbook_excel_to_json.py
+│       ├── validate_workbook_json.py
+│       ├── testcode_to_workbook_json.py
+│       └── requirements.txt
+└── AGENTS.md
+```
 
-Codexのチャットで自然文から依頼するか、Skill名を明示します。各工程は独立しており、自動では連鎖しません。
+Excel変換にはPythonと `openpyxl` が必要です。
 
-1. `$design-test-matrix` に対象コードを指定し、テストケースExcelを作成させる。
-2. `$convert-test-matrix` に作成したExcelを指定し、JSONへ変換させる。
-3. `$write-matrix-tests` にJSONを指定し、テストコードへ反映・実行させる。
+```bash
+python3 -m pip install -r .codex/scripts/requirements.txt
+```
 
-既存テストをマトリクス化するときは、対象テストコードを指定して `$reverse-test-matrix` を使います。
+対象プロジェクトに既存の `.codex` がある場合は、フォルダ全体を上書きせず `agents/` と `scripts/` の内容をマージしてください。`AGENTS.md` の運用ルールも必要に応じて対象プロジェクトへ追記します。
 
-入力候補が複数ある場合は対象パスを明示してください。Codexは更新日時だけで入力を選択しません。
+## エージェント一覧
+
+| エージェント | 入力 | 出力 |
+| --- | --- | --- |
+| `design-test-matrix` | コードまたはフォルダ | `testcases/testcase_*.xlsx` |
+| `convert-test-matrix` | `testcases/testcase_*.xlsx` | 同名の `.json` |
+| `testcode-writer` | `testcases/testcase_*.json` | テストコード |
+| `reverse-test-matrix` | MSTest DataRowコード | `testcases/testcase_*_reversed.json` |
+
+## 基本ワークフロー
+
+各工程は独立しており、自動では連鎖しません。Codexへエージェント名と対象パスを明示します。
+
+```text
+design-test-matrix エージェントに src/TicketService.cs のテストケースExcelを作成させてください。
+```
+
+```text
+convert-test-matrix エージェントに testcases/testcase_ticketservice_resolveexpected.xlsx をJSONへ変換させてください。
+```
+
+```text
+testcode-writer エージェントに testcases/testcase_ticketservice_resolveexpected.json からテストを実装させてください。
+```
+
+既存テストをマトリクス化する場合は次のように依頼します。
+
+```text
+reverse-test-matrix エージェントに src/Example.Tests/TicketServiceTests.cs をJSONへ逆生成させてください。
+```
 
 ```mermaid
 flowchart TD
-    A(["対象コード"]) --> B["$design-test-matrix"]
+    A(["対象コード"]) --> B["design-test-matrix"]
     B --> C(["testcases/testcase_&lt;class&gt;_&lt;method&gt;.xlsx"])
-    C --> D["$convert-test-matrix"]
+    C --> D["convert-test-matrix"]
     D --> E(["testcases/testcase_&lt;class&gt;_&lt;method&gt;.json"])
-    E --> F["$write-matrix-tests"]
+    E --> F["testcode-writer"]
     F --> G(["既存形式に沿ったテストコード"])
 
-    H(["既存MSTest DataRowテスト"]) --> I["$reverse-test-matrix"]
+    H(["既存MSTest DataRowテスト"]) --> I["reverse-test-matrix"]
     I --> J(["testcases/testcase_&lt;source&gt;_reversed.json"])
 ```
-
-## Skill一覧
-
-| Skill | 入力 | 出力 |
-| --- | --- | --- |
-| `$design-test-matrix` | コードまたはフォルダ | `testcases/testcase_*.xlsx` |
-| `$convert-test-matrix` | `testcases/testcase_*.xlsx` | 同名の `.json` |
-| `$write-matrix-tests` | `testcases/testcase_*.json` | テストコード |
-| `$reverse-test-matrix` | MSTest DataRowコード | `testcases/testcase_*_reversed.json` |
-
-Skill定義は `.agents/skills/<skill-name>/` にあります。リポジトリ固有のカスタムスラッシュコマンドやMarkdown形式のカスタムエージェントには依存しません。
 
 ## データ契約
 
@@ -52,37 +81,6 @@ ExcelとJSONは次の2シートを持ちます。
 - `因子と水準`
 - `テストケース`
 
-`テストケース` の列は `ID`、1列以上の因子列、`expected`、`memo` です。JSONは同じ内容を次のworkbook形式で表現します。
-
-```json
-{
-  "sheets": [
-    {
-      "name": "因子と水準",
-      "columns": ["因子", "水準1", "水準2", "備考"],
-      "rows": [
-        {
-          "因子": "Soup",
-          "水準1": "塩",
-          "水準2": "醤油",
-          "備考": "コード上の分岐から抽出"
-        }
-      ]
-    },
-    {
-      "name": "テストケース",
-      "columns": ["ID", "Soup", "expected", "memo"],
-      "rows": [
-        {
-          "ID": "TC-001",
-          "Soup": "塩",
-          "expected": "食券1",
-          "memo": "pairwise(valid)"
-        }
-      ]
-    }
-  ]
-}
-```
+`テストケース` の列は `ID`、1列以上の因子列、`expected`、`memo` です。JSONは同じ内容をworkbook形式の `sheets` 配列で表現します。
 
 逆生成では、既存DataRowに実際に現れる値だけから `因子と水準` を復元します。元のテストコードから判定できない未使用水準や設計意図は補完しません。

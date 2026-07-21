@@ -45,8 +45,9 @@ def split_top_level_csv(text: str) -> list[str]:
             buffer = []
         else:
             buffer.append(char)
-    if "".join(buffer).strip():
-        parts.append("".join(buffer).strip())
+    tail = "".join(buffer).strip()
+    if tail:
+        parts.append(tail)
     return parts
 
 
@@ -71,25 +72,21 @@ def normalize_parameter(name: str) -> str:
 
 
 def extract_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    text = path.read_text(encoding="utf-8")
     columns: list[str] = []
     rows: list[dict[str, str]] = []
-    for block in METHOD_BLOCK_RE.finditer(text):
-        raw_parameters = [item for item in split_top_level_csv(block.group(2)) if item]
-        parameter_names = [normalize_parameter(item.split("=")[0].strip().split()[-1]) for item in raw_parameters]
-        if len(parameter_names) != len(set(parameter_names)):
+    for block in METHOD_BLOCK_RE.finditer(path.read_text(encoding="utf-8")):
+        parameters = [item for item in split_top_level_csv(block.group(2)) if item]
+        names = [normalize_parameter(item.split("=")[0].strip().split()[-1]) for item in parameters]
+        if len(names) != len(set(names)):
             raise ValueError(f"Duplicated normalized parameter in {path}")
-        if columns and parameter_names != columns:
+        if columns and names != columns:
             raise ValueError(f"DataRow methods use different parameter columns in {path}")
-        columns = parameter_names
+        columns = names
         for match in DATAROW_RE.finditer(block.group(1)):
             values = [parse_literal(item) for item in split_top_level_csv(match.group(1))]
-            if len(values) != len(parameter_names):
-                raise ValueError(
-                    f"DataRow argument count does not match method parameters in {path}: "
-                    f"{len(values)} != {len(parameter_names)}"
-                )
-            rows.append(dict(zip(parameter_names, values)))
+            if len(values) != len(names):
+                raise ValueError(f"DataRow argument count does not match method parameters in {path}")
+            rows.append(dict(zip(names, values)))
     return columns, rows
 
 
@@ -106,7 +103,6 @@ def build_payload(files: list[Path]) -> dict[str, Any]:
         rows.extend(file_rows)
     if not rows:
         raise ValueError("No supported MSTest DataRow test cases found")
-
     missing = [name for name in ("ID", "expected") if name not in columns]
     if missing:
         raise ValueError(f"Missing required test parameters: {', '.join(missing)}")
@@ -114,39 +110,33 @@ def build_payload(files: list[Path]) -> dict[str, Any]:
         columns.append("memo")
         for row in rows:
             row["memo"] = ""
-    factor_columns = [name for name in columns if name not in RESERVED_COLUMNS]
-    if not factor_columns:
+    factors = [name for name in columns if name not in RESERVED_COLUMNS]
+    if not factors:
         raise ValueError("At least one factor parameter is required")
-
-    seen_ids: set[str] = set()
+    seen: set[str] = set()
     for row in rows:
         case_id = row["ID"].strip()
         if not case_id:
             raise ValueError("A test case has an empty ID")
-        if case_id in seen_ids:
+        if case_id in seen:
             raise ValueError(f"Duplicated test case ID: {case_id}")
-        seen_ids.add(case_id)
+        seen.add(case_id)
         if not row["expected"].strip():
             raise ValueError(f"Test case {case_id} has an empty expected")
-
-    max_levels = max(len(dict.fromkeys(row[name] for row in rows)) for name in factor_columns)
-    factor_sheet_columns = ["因子", *[f"水準{index}" for index in range(1, max_levels + 1)], "備考"]
+    max_levels = max(len(dict.fromkeys(row[name] for row in rows)) for name in factors)
+    factor_columns = ["因子", *[f"水準{index}" for index in range(1, max_levels + 1)], "備考"]
     factor_rows = []
-    for name in factor_columns:
-        levels = list(dict.fromkeys(row[name] for row in rows))
-        factor_row = {column: "" for column in factor_sheet_columns}
+    for name in factors:
+        factor_row = {column: "" for column in factor_columns}
         factor_row["因子"] = name
         factor_row["備考"] = "既存DataRowに現れる値から復元"
-        for index, level in enumerate(levels, start=1):
+        for index, level in enumerate(dict.fromkeys(row[name] for row in rows), start=1):
             factor_row[f"水準{index}"] = level
         factor_rows.append(factor_row)
-
-    return {
-        "sheets": [
-            {"name": "因子と水準", "columns": factor_sheet_columns, "rows": factor_rows},
-            {"name": "テストケース", "columns": columns, "rows": rows},
-        ]
-    }
+    return {"sheets": [
+        {"name": "因子と水準", "columns": factor_columns, "rows": factor_rows},
+        {"name": "テストケース", "columns": columns, "rows": rows},
+    ]}
 
 
 def main() -> None:
@@ -154,7 +144,6 @@ def main() -> None:
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-
     target = Path(args.input)
     if target.is_dir():
         files = sorted(path for path in target.rglob("*.cs") if path.is_file())
@@ -164,16 +153,13 @@ def main() -> None:
         raise ValueError(f"Input must be an existing .cs file or directory: {target}")
     if not files:
         raise ValueError(f"No .cs files found under: {target}")
-
     output = Path(args.output)
     if output.parent.name != "testcases" or not output.name.startswith("testcase_") or output.suffix.lower() != ".json":
         raise ValueError("Output must be named testcases/testcase_*.json")
     payload = build_payload(files)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    factor_count = len(payload["sheets"][0]["rows"])
-    case_count = len(payload["sheets"][1]["rows"])
-    print(f"Reversed {len(files)} files / {factor_count} factors / {case_count} cases -> {output}")
+    print(f"Reversed {len(files)} files / {len(payload['sheets'][0]['rows'])} factors / {len(payload['sheets'][1]['rows'])} cases -> {output}")
 
 
 if __name__ == "__main__":

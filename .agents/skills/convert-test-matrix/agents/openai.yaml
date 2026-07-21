@@ -1,7 +1,0 @@
-interface:
-  display_name: "テストマトリクス変換"
-  short_description: "テストケースExcelをworkbook形式JSONへ変換"
-  default_prompt: "$convert-test-matrix を使って、指定したテストケースExcelをJSONへ変換してください。"
-
-policy:
-  allow_implicit_invocation: true
