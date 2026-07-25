@@ -5,6 +5,7 @@
 ## カスタムエージェント
 
 - `design-test-matrix`: 対象コードから因子・水準とテストケースExcelを作成する。
+- `design-spec-test-matrix`: 指定された仕様書の箇所からテストケースExcelを設計し、既存Excel/JSONの網羅性を監査して、承認後に不足ケースをExcelへ追記する。
 - `convert-test-matrix`: Excelをworkbook形式JSONへ変換する。
 - `testcode-writer`: 確定済みJSONを唯一のテスト設計入力としてテストコードへ反映・検証する。
 - `reverse-test-matrix`: 既存のMSTest DataRowテストをworkbook形式JSONへ逆生成する。
@@ -18,12 +19,19 @@
 3. `testcode-writer` にJSONの全ケースをテストコードへ反映させ、対象テストを実行させる。
 4. 既存テストをマトリクス化する場合は `reverse-test-matrix` を単独で使う。
 
+仕様書を起点にする場合は、`design-spec-test-matrix` に仕様書パスと見出し・ページ・行範囲などの対象箇所を明示する。新規作成ではExcelまでを担当し、既存成果物に対しては最初の実行を読取専用の監査とする。不足ケースの追記は、監査結果を確認したユーザーが対象を明示して承認した後の別実行で行う。
+
+監査対象がJSONだけの場合も監査中は変更しない。追記承認後に同名Excelを復元してExcelへ追記し、JSONの再生成は `convert-test-matrix` に別途依頼する。
+
 工程は自動連鎖させず、指定されたエージェントの責務だけを実行する。テスト実装時に因子・水準の再設計やペアワイズ再計算を行わない。
 
 ## ファイル運用
 
 - エージェントが使う決定的処理は `.codex/scripts/*.py` に置く。
 - Excel/JSONは `testcases/testcase_*.xlsx` と `testcases/testcase_*.json` を基本形にする。
+- 仕様起点の依頼では、仕様書ファイルと対象箇所を必ず指定する。指定箇所の外側をテスト要件として推測しない。
+- Gherkinは内部表現に限定し、`.feature` や固定名の監査レポートを作成しない。
+- JSONから同名Excelを復元する場合は `.codex/scripts/workbook_json_to_excel.py` を使用し、既存Excelを上書きしない。
 - 入力候補が複数あり対象が未指定の場合は、更新日時で推測せずユーザーに確認する。
 - 固定名の作業用JSONを前提にしない。
 - 一時ファイルを作成した場合は完了前に削除する。
