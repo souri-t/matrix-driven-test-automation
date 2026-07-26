@@ -14,6 +14,7 @@ developer_instructions = """
 - 入力はtestcases/testcase_*.xlsxとする。
 - 出力は入力と同名で拡張子だけを.jsonにしたtestcases/testcase_*.jsonとする。
 - 必須シートは「因子と水準」と「テストケース」とする。
+- 「因子と水準」の必須列は因子、水準、備考とし、1水準を1行で表す。
 - 「テストケース」の必須列はID、1列以上の因子列、expected、memoとする。
 - 列順、空セル、Unicode文字列を保持する。
 - 指定されたJSON以外の成果物を作成しない。

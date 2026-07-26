@@ -123,16 +123,17 @@ def build_payload(files: list[Path]) -> dict[str, Any]:
         seen.add(case_id)
         if not row["expected"].strip():
             raise ValueError(f"Test case {case_id} has an empty expected")
-    max_levels = max(len(dict.fromkeys(row[name] for row in rows)) for name in factors)
-    factor_columns = ["因子", *[f"水準{index}" for index in range(1, max_levels + 1)], "備考"]
-    factor_rows = []
+    factor_columns = ["因子", "水準", "備考"]
+    factor_rows: list[dict[str, str]] = []
     for name in factors:
-        factor_row = {column: "" for column in factor_columns}
-        factor_row["因子"] = name
-        factor_row["備考"] = "既存DataRowに現れる値から復元"
-        for index, level in enumerate(dict.fromkeys(row[name] for row in rows), start=1):
-            factor_row[f"水準{index}"] = level
-        factor_rows.append(factor_row)
+        for level in dict.fromkeys(row[name] for row in rows):
+            factor_rows.append(
+                {
+                    "因子": name,
+                    "水準": level,
+                    "備考": "既存DataRowに現れる値から復元",
+                }
+            )
     return {"sheets": [
         {"name": "因子と水準", "columns": factor_columns, "rows": factor_rows},
         {"name": "テストケース", "columns": columns, "rows": rows},
@@ -159,7 +160,8 @@ def main() -> None:
     payload = build_payload(files)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Reversed {len(files)} files / {len(payload['sheets'][0]['rows'])} factors / {len(payload['sheets'][1]['rows'])} cases -> {output}")
+    factor_count = len({row["因子"] for row in payload["sheets"][0]["rows"]})
+    print(f"Reversed {len(files)} files / {factor_count} factors / {len(payload['sheets'][1]['rows'])} cases -> {output}")
 
 
 if __name__ == "__main__":
