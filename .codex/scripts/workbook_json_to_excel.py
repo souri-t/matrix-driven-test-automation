@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Alignment, PatternFill
+from openpyxl.utils import get_column_letter
 
 from validate_workbook_json import validate
 
@@ -30,11 +33,41 @@ def write_workbook(payload: dict[str, Any], output_path: Path) -> None:
     workbook.remove(workbook.active)
     for sheet in payload["sheets"]:
         worksheet = workbook.create_sheet(title=sheet["name"])
+        worksheet.sheet_view.showGridLines = False
+        worksheet.freeze_panes = "A2"
+        worksheet.page_setup.orientation = "landscape"
+        worksheet.page_setup.fitToWidth = 1
+        worksheet.page_setup.fitToHeight = 0
+        worksheet.sheet_properties.pageSetUpPr.fitToPage = True
         columns = sheet["columns"]
         worksheet.append(columns)
         for row in sheet["rows"]:
             worksheet.append([row.get(column, "") for column in columns])
+        for cell in worksheet[1]:
+            cell.fill = PatternFill(fill_type="solid", fgColor="FFD9EAF7")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        for row in worksheet.iter_rows(min_row=2):
+            for cell in row:
+                cell.alignment = Alignment(vertical="top", wrap_text=True)
+        if worksheet.max_row > 1:
+            worksheet.auto_filter.ref = (
+                f"A1:{get_column_letter(len(columns))}{worksheet.max_row}"
+            )
+        for index, column in enumerate(columns, start=1):
+            values = [column, *(row.get(column, "") for row in sheet["rows"])]
+            width = min(
+                40,
+                max(10, max(_display_width(str(value)) for value in values) + 2),
+            )
+            worksheet.column_dimensions[get_column_letter(index)].width = width
     workbook.save(output_path)
+
+
+def _display_width(value: str) -> int:
+    return sum(
+        2 if unicodedata.east_asian_width(character) in {"F", "W", "A"} else 1
+        for character in value
+    )
 
 
 def verify_workbook(payload: dict[str, Any], output_path: Path) -> None:
