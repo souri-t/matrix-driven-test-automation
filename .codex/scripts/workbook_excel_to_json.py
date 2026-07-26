@@ -9,6 +9,7 @@ from openpyxl import load_workbook
 
 
 REQUIRED_SHEETS = ("因子と水準", "テストケース")
+REQUIRED_FACTOR_COLUMNS = ("因子", "水準", "備考")
 RESERVED_TEST_COLUMNS = {"ID", "expected", "memo"}
 
 
@@ -44,10 +45,25 @@ def validate_payload(payload: dict[str, Any]) -> None:
     missing = [name for name in REQUIRED_SHEETS if name not in sheets]
     if missing:
         raise ValueError(f"Missing required sheets: {', '.join(missing)}")
-    factor_columns = sheets["因子と水準"]["columns"]
-    missing = [name for name in ("因子", "水準1", "備考") if name not in factor_columns]
+    factor_sheet = sheets["因子と水準"]
+    factor_columns = factor_sheet["columns"]
+    missing = [name for name in REQUIRED_FACTOR_COLUMNS if name not in factor_columns]
     if missing:
         raise ValueError(f"Sheet '因子と水準' is missing columns: {', '.join(missing)}")
+    seen_levels: set[tuple[str, str]] = set()
+    for index, row in enumerate(factor_sheet["rows"], start=2):
+        factor = row["因子"].strip()
+        level = row["水準"].strip()
+        if not factor:
+            raise ValueError(f"Sheet '因子と水準' row {index} has an empty 因子")
+        if not level:
+            raise ValueError(f"Sheet '因子と水準' row {index} has an empty 水準")
+        key = (factor, level)
+        if key in seen_levels:
+            raise ValueError(
+                f"Sheet '因子と水準' has duplicated 因子 and 水準: {factor} / {level}"
+            )
+        seen_levels.add(key)
     columns = sheets["テストケース"]["columns"]
     missing = [name for name in ("ID", "expected", "memo") if name not in columns]
     if missing:

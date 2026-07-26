@@ -27,6 +27,10 @@ class DesignSpecTestMatrixAgentContractTests(unittest.TestCase):
             self.assertIn(keyword, self.instructions)
         self.assertIn("明記された判定表、例示、列挙された組み合わせは削減せず", self.instructions)
         self.assertIn("Gherkinは推論用の内部表現に限定", self.instructions)
+        self.assertIn(
+            "因子、水準、備考を持ち、1水準を1行で表す",
+            self.instructions,
+        )
 
     def test_audit_classifications_and_approval_gate(self) -> None:
         for classification in (

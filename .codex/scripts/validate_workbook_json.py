@@ -5,6 +5,9 @@ import json
 from pathlib import Path
 
 
+REQUIRED_FACTOR_COLUMNS = ("因子", "水準", "備考")
+
+
 def validate(path: Path) -> tuple[int, list[str]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or not isinstance(data.get("sheets"), list):
@@ -23,10 +26,30 @@ def validate(path: Path) -> tuple[int, list[str]]:
     missing = [name for name in ("因子と水準", "テストケース") if name not in sheets]
     if missing:
         raise ValueError(f"Missing required sheets: {', '.join(missing)}")
-    factor_columns = sheets["因子と水準"]["columns"]
-    missing = [name for name in ("因子", "水準1", "備考") if name not in factor_columns]
+    factor_sheet = sheets["因子と水準"]
+    factor_columns = factor_sheet["columns"]
+    missing = [name for name in REQUIRED_FACTOR_COLUMNS if name not in factor_columns]
     if missing:
         raise ValueError(f"Sheet '因子と水準' is missing columns: {', '.join(missing)}")
+    seen_levels: set[tuple[str, str]] = set()
+    for index, row in enumerate(factor_sheet["rows"], start=1):
+        missing = [name for name in REQUIRED_FACTOR_COLUMNS if name not in row]
+        if missing:
+            raise ValueError(
+                f"Factor level row {index} is missing keys: {', '.join(missing)}"
+            )
+        if not all(isinstance(row[name], str) for name in REQUIRED_FACTOR_COLUMNS):
+            raise ValueError(f"Factor level row {index} values must be strings")
+        factor = row["因子"].strip()
+        level = row["水準"].strip()
+        if not factor:
+            raise ValueError(f"Factor level row {index} has an empty 因子")
+        if not level:
+            raise ValueError(f"Factor level row {index} has an empty 水準")
+        key = (factor, level)
+        if key in seen_levels:
+            raise ValueError(f"Duplicated 因子 and 水準: {factor} / {level}")
+        seen_levels.add(key)
     test_sheet = sheets["テストケース"]
     columns = test_sheet["columns"]
     missing = [name for name in ("ID", "expected", "memo") if name not in columns]
