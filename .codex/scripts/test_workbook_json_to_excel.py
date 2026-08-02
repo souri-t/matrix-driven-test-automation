@@ -22,6 +22,26 @@ def sample_payload() -> dict[str, object]:
     return {
         "sheets": [
             {
+                "name": "テスト対象",
+                "columns": ["テスト対象", "根拠資料", "参照箇所", "参照目的", "備考"],
+                "rows": [
+                    {
+                        "テスト対象": "TicketService.ResolveExpected",
+                        "根拠資料": "Spec/APIプロジェクト概要.md",
+                        "参照箇所": "2.5",
+                        "参照目的": "期待結果の確認",
+                        "備考": "",
+                    },
+                    {
+                        "テスト対象": "TicketService.ResolveExpected",
+                        "根拠資料": "",
+                        "参照箇所": "",
+                        "参照目的": "",
+                        "備考": "",
+                    },
+                ],
+            },
+            {
                 "name": "因子と水準",
                 "columns": ["因子", "水準", "備考"],
                 "rows": [
@@ -54,10 +74,18 @@ def sample_payload() -> dict[str, object]:
             },
             {
                 "name": "テストケース",
-                "columns": ["ID", "Soup", "NoodleAmount", "expected", "memo"],
+                "columns": [
+                    "ID",
+                    "テストの目的",
+                    "Soup",
+                    "NoodleAmount",
+                    "expected",
+                    "memo",
+                ],
                 "rows": [
                     {
                         "ID": "TC-001",
+                        "テストの目的": "塩・普通盛りの食券を確認する",
                         "Soup": "塩",
                         "NoodleAmount": "普通",
                         "expected": "食券1",
@@ -65,9 +93,18 @@ def sample_payload() -> dict[str, object]:
                     },
                     {
                         "ID": "TC-002",
+                        "テストの目的": "味噌・大盛りの未確定結果を確認する",
                         "Soup": "味噌",
                         "NoodleAmount": "大盛り",
                         "expected": "要確認",
+                        "memo": "",
+                    },
+                    {
+                        "ID": "TC-003",
+                        "テストの目的": "醤油・普通盛りの食券を確認する",
+                        "Soup": "醤油",
+                        "NoodleAmount": "普通",
+                        "expected": "食券3",
                         "memo": "",
                     },
                 ],
@@ -99,7 +136,19 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
             self.assertEqual(source.read_text(encoding="utf-8"), source_text)
 
             workbook = load_workbook(workbook_path, data_only=False)
-            self.assertEqual(workbook.sheetnames, ["因子と水準", "テストケース"])
+            self.assertEqual(
+                workbook.sheetnames,
+                ["テスト対象", "因子と水準", "テストケース"],
+            )
+            self.assertEqual(workbook["テスト対象"]["A2"].value, "TicketService.ResolveExpected")
+            self.assertIsNone(workbook["テスト対象"]["B3"].value)
+            self.assertEqual(workbook["テスト対象"].freeze_panes, "A2")
+            self.assertGreater(workbook["テスト対象"].column_dimensions["A"].width, 10)
+            self.assertEqual(
+                workbook["テスト対象"]["A1"].fill.fgColor.rgb,
+                "FFD9EAF7",
+            )
+            self.assertEqual(workbook["テスト対象"].page_setup.orientation, "landscape")
             self.assertEqual(
                 list(
                     workbook["因子と水準"].iter_rows(
@@ -115,8 +164,8 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
                     ("NoodleAmount", "大盛り", "Unicodeを保持"),
                 ],
             )
-            self.assertEqual(workbook["テストケース"]["E2"].value, "仕様: Spec/APIプロジェクト概要.md#2.5")
-            self.assertIsNone(workbook["テストケース"]["E3"].value)
+            self.assertEqual(workbook["テストケース"]["F2"].value, "仕様: Spec/APIプロジェクト概要.md#2.5")
+            self.assertIsNone(workbook["テストケース"]["F3"].value)
 
             round_trip = testcases / "testcase_roundtrip.json"
             subprocess.run(
@@ -176,7 +225,7 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
             )
 
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Missing required sheets", result.stderr)
+            self.assertIn("Workbook sheets must be exactly", result.stderr)
             self.assertFalse(source.with_suffix(".xlsx").exists())
 
     def test_unresolved_expected_can_be_restored_but_not_implemented(self) -> None:
@@ -212,7 +261,7 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
             testcases.mkdir()
             source = testcases / "testcase_horizontal.json"
             payload = sample_payload()
-            payload["sheets"][0] = {
+            payload["sheets"][1] = {
                 "name": "因子と水準",
                 "columns": ["因子", "水準1", "水準2", "備考"],
                 "rows": [
@@ -236,7 +285,7 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
             )
 
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("missing columns: 水準", result.stderr)
+            self.assertIn("columns must be exactly", result.stderr)
             self.assertFalse(source.with_suffix(".xlsx").exists())
 
     def test_duplicated_factor_and_level_are_rejected(self) -> None:
@@ -245,7 +294,7 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
             testcases.mkdir()
             source = testcases / "testcase_duplicate_level.json"
             payload = sample_payload()
-            payload["sheets"][0]["rows"].append(
+            payload["sheets"][1]["rows"].append(
                 {"因子": "Soup", "水準": "塩", "備考": "重複"}
             )
             source.write_text(
@@ -264,14 +313,49 @@ class WorkbookJsonToExcelTests(unittest.TestCase):
 
     def test_excel_conversion_rejects_duplicated_factor_and_level(self) -> None:
         payload = sample_payload()
-        payload["sheets"][0]["rows"].append(
+        payload["sheets"][1]["rows"].append(
             {"因子": "Soup", "水準": "塩", "備考": "重複"}
         )
 
         with self.assertRaisesRegex(
             ValueError,
-            "duplicated 因子 and 水準: Soup / 塩",
+            "Duplicated 因子 and 水準: Soup / 塩",
         ):
+            validate_excel_payload(payload)
+
+    def test_empty_test_target_is_rejected(self) -> None:
+        payload = sample_payload()
+        payload["sheets"][0]["rows"][0]["テスト対象"] = ""
+
+        with self.assertRaisesRegex(ValueError, "empty テスト対象"):
+            validate_excel_payload(payload)
+
+    def test_empty_test_purpose_is_rejected(self) -> None:
+        payload = sample_payload()
+        payload["sheets"][2]["rows"][0]["テストの目的"] = ""
+
+        with self.assertRaisesRegex(ValueError, "empty テストの目的"):
+            validate_excel_payload(payload)
+
+    def test_additional_sheet_is_rejected(self) -> None:
+        payload = sample_payload()
+        payload["sheets"].append({"name": "補助", "columns": [], "rows": []})
+
+        with self.assertRaisesRegex(ValueError, "Workbook sheets must be exactly"):
+            validate_excel_payload(payload)
+
+    def test_undefined_level_is_rejected(self) -> None:
+        payload = sample_payload()
+        payload["sheets"][2]["rows"][0]["Soup"] = "豚骨"
+
+        with self.assertRaisesRegex(ValueError, "uses undefined level: Soup / 豚骨"):
+            validate_excel_payload(payload)
+
+    def test_unused_level_is_rejected(self) -> None:
+        payload = sample_payload()
+        payload["sheets"][2]["rows"] = payload["sheets"][2]["rows"][:2]
+
+        with self.assertRaisesRegex(ValueError, "Unused factor levels: Soup / 醤油"):
             validate_excel_payload(payload)
 
 

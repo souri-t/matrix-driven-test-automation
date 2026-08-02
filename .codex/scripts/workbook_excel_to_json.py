@@ -7,10 +7,7 @@ from typing import Any
 
 from openpyxl import load_workbook
 
-
-REQUIRED_SHEETS = ("因子と水準", "テストケース")
-REQUIRED_FACTOR_COLUMNS = ("因子", "水準", "備考")
-RESERVED_TEST_COLUMNS = {"ID", "expected", "memo"}
+from validate_workbook_json import validate_payload
 
 
 def sheet_to_payload(ws: Any) -> dict[str, Any]:
@@ -40,48 +37,6 @@ def sheet_to_payload(ws: Any) -> dict[str, Any]:
     return {"name": ws.title, "columns": columns, "rows": data_rows}
 
 
-def validate_payload(payload: dict[str, Any]) -> None:
-    sheets = {sheet["name"]: sheet for sheet in payload["sheets"]}
-    missing = [name for name in REQUIRED_SHEETS if name not in sheets]
-    if missing:
-        raise ValueError(f"Missing required sheets: {', '.join(missing)}")
-    factor_sheet = sheets["因子と水準"]
-    factor_columns = factor_sheet["columns"]
-    missing = [name for name in REQUIRED_FACTOR_COLUMNS if name not in factor_columns]
-    if missing:
-        raise ValueError(f"Sheet '因子と水準' is missing columns: {', '.join(missing)}")
-    seen_levels: set[tuple[str, str]] = set()
-    for index, row in enumerate(factor_sheet["rows"], start=2):
-        factor = row["因子"].strip()
-        level = row["水準"].strip()
-        if not factor:
-            raise ValueError(f"Sheet '因子と水準' row {index} has an empty 因子")
-        if not level:
-            raise ValueError(f"Sheet '因子と水準' row {index} has an empty 水準")
-        key = (factor, level)
-        if key in seen_levels:
-            raise ValueError(
-                f"Sheet '因子と水準' has duplicated 因子 and 水準: {factor} / {level}"
-            )
-        seen_levels.add(key)
-    columns = sheets["テストケース"]["columns"]
-    missing = [name for name in ("ID", "expected", "memo") if name not in columns]
-    if missing:
-        raise ValueError(f"Sheet 'テストケース' is missing columns: {', '.join(missing)}")
-    if not [name for name in columns if name not in RESERVED_TEST_COLUMNS]:
-        raise ValueError("Sheet 'テストケース' must contain at least one factor column")
-    seen: set[str] = set()
-    for index, row in enumerate(sheets["テストケース"]["rows"], start=2):
-        case_id = row["ID"].strip()
-        if not case_id:
-            raise ValueError(f"Sheet 'テストケース' row {index} has an empty ID")
-        if case_id in seen:
-            raise ValueError(f"Sheet 'テストケース' has duplicated ID: {case_id}")
-        seen.add(case_id)
-        if not row["expected"].strip():
-            raise ValueError(f"Sheet 'テストケース' row {index} has an empty expected")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert a test matrix workbook to workbook JSON.")
     parser.add_argument("--input", required=True)
@@ -96,7 +51,14 @@ def main() -> None:
     if output_path.parent.name != "testcases" or not output_path.name.startswith("testcase_") or output_path.suffix.lower() != ".json":
         raise ValueError("Output must be named testcases/testcase_*.json")
     workbook = load_workbook(input_path, data_only=False)
-    payload = {"sheets": [sheet_to_payload(workbook[name]) for name in workbook.sheetnames]}
+    try:
+        payload = {
+            "sheets": [
+                sheet_to_payload(workbook[name]) for name in workbook.sheetnames
+            ]
+        }
+    finally:
+        workbook.close()
     validate_payload(payload)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
